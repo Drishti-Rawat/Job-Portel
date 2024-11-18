@@ -5,6 +5,7 @@ import { ThemeProvider } from "../components/theme-provider";
 import Header from "../components/shared/Header";
 import { ClerkProvider } from "@clerk/nextjs";
 import { shadesOfPurple } from '@clerk/themes';
+import Footer from "@/components/shared/Footer";
 
 
 export const metadata = {
@@ -28,13 +29,13 @@ export default function RootLayout({ children }) {
             disableTransitionOnChange
           >
             <div className="grid-background  ">  </div>
-          <main className="container min-h-screen">
+          <main className=" container min-h-screen">
             <Header/>
         {children}
      
      
           </main>
-        <div className="text-center p-10 bg-gray-800 mt-10">Made with ❤️ By HireX</div>
+        <Footer/>
             
         </ThemeProvider>
       </body>

@@ -1,5 +1,7 @@
+"use client";
 import React, { useState } from "react";
 import { BarLoader } from "react-spinners";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Drawer,
   DrawerClose,
@@ -18,6 +20,7 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { ApplyToJob } from "@/actions/application.actions";
+import { Upload, AlertTriangle, CheckCircle } from "lucide-react";
 
 const ApplyToJobSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -80,12 +83,10 @@ const ApplyJobDrawer = ({ job, user, applied = false, fetchJobDetails, session }
         throw new Error(response?.[0]?.error?.message || "Failed to submit application");
       }
 
-      // Success
       setIsSuccess(true);
       reset();
       await fetchJobDetails();
       
-      // Close drawer after successful submission
       setTimeout(() => {
         setIsSuccess(false);
         document.querySelector('[role="dialog"] button[type="button"]')?.click();
@@ -105,75 +106,88 @@ const ApplyJobDrawer = ({ job, user, applied = false, fetchJobDetails, session }
           size="lg"
           variant={job.isOpen && !applied ? "blue" : "destructive"}
           disabled={!job.isOpen || applied}
+          className="w-full  "
         >
           {job.isOpen ? (applied ? "Applied" : "Apply") : "Hiring closed"}
         </Button>
       </DrawerTrigger>
-      <DrawerContent>
-        <DrawerHeader>
-          <DrawerTitle>
+      <DrawerContent className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm">
+        <DrawerHeader className="bg-indigo-700/10 p-4 rounded-t-lg">
+          <DrawerTitle className="text-indigo-700 dark:text-indigo-300">
             Apply for {job.title} at {job?.company?.name}
           </DrawerTitle>
-          <DrawerDescription>Please fill the form below</DrawerDescription>
+          <DrawerDescription className="text-indigo-500 dark:text-indigo-400">
+            Please fill the form below
+          </DrawerDescription>
         </DrawerHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4 p-4 pb-0">
-          {error && (
-            <div className="bg-red-50 p-4 rounded-md text-red-500 text-sm">
-              {error}
-            </div>
-          )}
-          
-          {isSuccess && (
-            <div className="bg-green-50 p-4 rounded-md text-green-500 text-sm">
-              Application submitted successfully!
-            </div>
-          )}
+          <AnimatePresence>
+            {error && (
+              <motion.div 
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="bg-red-50 dark:bg-red-950 p-4 rounded-md text-red-500 dark:text-red-300 text-sm flex items-center gap-2"
+              >
+                <AlertTriangle className="w-5 h-5" />
+                {error}
+              </motion.div>
+            )}
+            
+            {isSuccess && (
+              <motion.div 
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="bg-green-50 dark:bg-green-950 p-4 rounded-md text-green-500 dark:text-green-300 text-sm flex items-center gap-2"
+              >
+                <CheckCircle className="w-5 h-5" />
+                Application submitted successfully!
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {isSubmitting && (
             <div className="w-full">
-              <BarLoader width={"100%"} color="#36d7b7" />
+              <BarLoader width={"100%"} color="#6366F1" />
             </div>
           )}
 
-          <div>
-            <Input
-              type="text"
-              placeholder="Name of candidate"
-              className="flex-1"
-              disabled={isSubmitting}
-              {...register("name")}
-            />
-            {errors.name && (
-              <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>
-            )}
-          </div>
-
-          <div>
-            <Input
-              type="number"
-              placeholder="Years of Experience"
-              className="flex-1"
-              disabled={isSubmitting}
-              {...register("experience", { valueAsNumber: true })}
-            />
-            {errors.experience && (
-              <p className="text-red-500 text-sm mt-1">{errors.experience.message}</p>
-            )}
-          </div>
-
-          <div>
-            <Input
-              type="text"
-              placeholder="Skills (comma separated)"
-              className="flex-1"
-              disabled={isSubmitting}
-              {...register("skills")}
-            />
-            {errors.skills && (
-              <p className="text-red-500 text-sm mt-1">{errors.skills.message}</p>
-            )}
-          </div>
+          {[
+            { 
+              name: "name", 
+              type: "text", 
+              placeholder: "Name of candidate",
+              errorKey: "name"
+            },
+            { 
+              name: "experience", 
+              type: "number", 
+              placeholder: "Years of Experience",
+              errorKey: "experience",
+              valueAsNumber: true
+            },
+            { 
+              name: "skills", 
+              type: "text", 
+              placeholder: "Skills (comma separated)",
+              errorKey: "skills"
+            }
+          ].map(({ name, type, placeholder, errorKey, valueAsNumber }) => (
+            <div key={name}>
+              <Input
+                type={type}
+                placeholder={placeholder}
+                className="flex-1 border-indigo-200 dark:border-indigo-800 focus:border-pink-500 focus:ring-pink-500"
+                disabled={isSubmitting}
+                {...register(name, { valueAsNumber })}
+              />
+              {errors[errorKey] && (
+                <p className="text-red-500 text-sm mt-1">{errors[errorKey].message}</p>
+              )}
+            </div>
+          ))}
 
           <div>
             <Controller
@@ -186,18 +200,21 @@ const ApplyJobDrawer = ({ job, user, applied = false, fetchJobDetails, session }
                   className="flex flex-col gap-2"
                   disabled={isSubmitting}
                 >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="Intermediate" id="intermediate" />
-                    <Label htmlFor="intermediate">Intermediate</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="Graduate" id="graduate" />
-                    <Label htmlFor="graduate">Graduate</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="Post Graduate" id="postGraduate" />
-                    <Label htmlFor="postGraduate">Post Graduate</Label>
-                  </div>
+                  {["Intermediate", "Graduate", "Post Graduate"].map((edu) => (
+                    <div key={edu} className="flex items-center space-x-2">
+                      <RadioGroupItem 
+                        value={edu} 
+                        id={edu.toLowerCase().replace(" ", "")} 
+                        className="text-indigo-600 dark:text-indigo-400"
+                      />
+                      <Label 
+                        htmlFor={edu.toLowerCase().replace(" ", "")} 
+                        className="text-indigo-700 dark:text-indigo-300"
+                      >
+                        {edu}
+                      </Label>
+                    </div>
+                  ))}
                 </RadioGroup>
               )}
             />
@@ -210,9 +227,10 @@ const ApplyJobDrawer = ({ job, user, applied = false, fetchJobDetails, session }
             <Input
               type="file"
               accept=".pdf,.doc,.docx"
-              className="flex-1 file:text-gray-500"
+              className="flex-1 file:text-indigo-500 dark:file:text-indigo-300 border-indigo-200 dark:border-indigo-800"
               disabled={isSubmitting}
               {...register("resume")}
+              icon={<Upload className="w-5 h-5 text-indigo-500" />}
             />
             {errors.resume && (
               <p className="text-red-500 text-sm mt-1">{errors.resume.message}</p>
@@ -221,17 +239,24 @@ const ApplyJobDrawer = ({ job, user, applied = false, fetchJobDetails, session }
 
           <Button 
             type="submit" 
-            variant="blue" 
             size="lg"
+            variant="blue"
             disabled={isSubmitting}
+            className=""
           >
             {isSubmitting ? "Submitting..." : "Apply"}
           </Button>
         </form>
 
-        <DrawerFooter>
+        <DrawerFooter className="bg-indigo-50/50 dark:bg-indigo-950/50 p-4">
           <DrawerClose asChild>
-            <Button variant="outline" disabled={isSubmitting}>Cancel</Button>
+            <Button 
+              variant="outline" 
+              disabled={isSubmitting}
+              className="border-indigo-200 text-indigo-600 dark:border-indigo-800 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900"
+            >
+              Cancel
+            </Button>
           </DrawerClose>
         </DrawerFooter>
       </DrawerContent>

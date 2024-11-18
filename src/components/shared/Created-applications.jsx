@@ -3,7 +3,6 @@ import { useSession, useUser } from "@clerk/clerk-react";
 import ApplicationCard from "@/components/shared/JobApplicationCard";
 import { useEffect, useState } from "react";
 import { getApplications } from "@/actions/application.actions";
-import useFetch from "@/hooks/use-fetch";
 import { BarLoader } from "react-spinners";
 
 const CreatedApplications = () => {

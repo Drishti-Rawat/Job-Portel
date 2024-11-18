@@ -13,7 +13,7 @@ import { BriefcaseBusinessIcon, Heart, PenBox } from 'lucide-react';
   });
 const Header = () => {
  
-  const {user,isSignedIn} = useUser();
+  const {user} = useUser();
 
     return (
     <header className=' '>
@@ -23,9 +23,12 @@ const Header = () => {
             <div className='flex gap-8'>
 
             <SignedIn >
+              <Link href='/job-listing'><Button variant="primary" className="rounded-full text-center">Find Jobs</Button></Link>
               {/* add a confition that only recriuite can see this post a job button */}
+              {user?.unsafeMetadata?.role === "recruiter"&&
               <Link href='/post-job'><Button variant="destructive" className="rounded-full text-center"><PenBox size={20} className="mr-2"/>Post a Job</Button></Link>
-        
+              }
+
               <UserButton appearance={{elements:{avatarBox:"h-10 w-10"}}}>
                
                   <UserButton.MenuItems>

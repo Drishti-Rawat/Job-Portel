@@ -17,7 +17,7 @@ import {
 // import { updateApplicationStatus } from "@/api/apiApplication";
 
 import { BarLoader } from "react-spinners";
-import { useEffect, useState } from "react";
+import {  useState } from "react";
 import { updateApplicationStatus } from "@/actions/application.actions";
 
 const ApplicationCard = ({ application, isCandidate = false ,session}) => {
