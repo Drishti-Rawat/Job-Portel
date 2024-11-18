@@ -1,133 +1,50 @@
-
 'use client'
-import { getCompanies } from "@/actions/companies.actions";
-import { AddNewJob } from "@/actions/jobs.actions";
-import AddCompanyDrawer from "@/components/shared/AddCompanyDrawer";
+import { Permanent_Marker } from "next/font/google";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import Link from "next/link";
 import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { useSession, useUser } from "@clerk/clerk-react";
-import { zodResolver } from "@hookform/resolvers/zod";
-import MDEditor from "@uiw/react-md-editor";
-import { State } from "country-state-city";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
-import { BarLoader } from "react-spinners";
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+} from "@/components/ui/carousel";
+import Autoplay from "embla-carousel-autoplay";
+import { companies, faqs } from "../data/index";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { motion } from "framer-motion";
-import { Sparkles, Building2, MapPin, FileText, ClipboardList } from "lucide-react";
-import { z } from "zod";
+import { Sparkles, Briefcase, Users, ChevronRight } from "lucide-react";
+import { FeatureCard } from "@/components/shared/FeaturesCard";
 
-const schema = z.object({
-  title: z.string().min(1, { message: "Title is required" }),
-  description: z.string().min(1, { message: "Description is required" }),
-  location: z.string().min(1, { message: "Select a location" }),
-  company_id: z.string().min(1, { message: "Select or Add a new Company" }),
-  requirements: z.string().min(1, { message: "Requirements are required" }),
+const permanentMarker = Permanent_Marker({
+  subsets: ["latin"],
+  weight: "400",
 });
 
-const PostJob = () => {
-  const { user, isLoaded } = useUser();
-  const router = useRouter();
-
-  const {
-    register,
-    handleSubmit,
-    control,
-    formState: { errors },
-  } = useForm({
-    defaultValues: { location: "", company_id: "", requirements: "" },
-    resolver: zodResolver(schema),
-  });
-
-  const [dataCreateJob, setDataCreateJob] = useState(null);
-  const [loadingCreateJob, setLoadingCreateJob] = useState(false);
-  const [companies, setCompanies] = useState([]);
-  const [loadingCompanies, setLoadingCompanies] = useState(false);
-  const {session} = useSession();
-
-  const fnCreateJob = async (data) => {
-    setLoadingCreateJob(true);
-    try {
-      const supabasesessiontoken = await session.getToken({
-        template: "supabase",
-      });
-  
-      if (!supabasesessiontoken) {
-        console.log("No token available");
-        return;
-      } 
-      const response = await AddNewJob(supabasesessiontoken,null, data);
-      setDataCreateJob(response);
-    } catch (error) {
-      console.log("error creating job", error);
-    }
-    finally {
-      setLoadingCreateJob(false);
-    }
-  };
-
-  const onSubmit = (data) => {
-    fnCreateJob({
-      ...data,
-      recruiter: user.id,
-      isOpen: true,
-    });
-  };
-
-  useEffect(() => {
-    if (dataCreateJob?.length > 0) router.push(`/job-listing`);
-  }, [loadingCreateJob]);
-
-  const fnCompanies = async () => {
-    setLoadingCompanies(true);
-    try {
-      const supabasesessiontoken = await session.getToken({
-        template: "supabase",
-      });
-  
-      if (!supabasesessiontoken) {
-        console.log("No token available");
-        return;
-      } 
-      const response = await getCompanies(supabasesessiontoken);
-      setCompanies(response);
-    } catch (error) {
-      console.log("error fetching companies", error);
-    }
-    finally {
-      setLoadingCompanies(false);
-    }
+const features = [
+  {
+    title: "For Job Seekers",
+    icon: Users,
+    description: "Search and apply for your dream job, track your applications, and stay updated with the latest job opportunities.",
+    buttonText: "Find Jobs",
+    buttonLink: "/job-listing",
+    gradient: "bg-gradient-to-br from-blue-900/80 via-blue-800/50 to-blue-900/30",
+    hoverGradient: "bg-blue-500/20",
+    buttonColor: "bg-blue-500 hover:bg-blue-600 text-white shadow-lg hover:shadow-blue-500/25"
+  },
+  {
+    title: "For Employers",
+    icon: Briefcase,
+    description: "Post job opportunities and connect with talented candidates. Find the perfect fit for your organization.",
+    buttonText: "Post a Job",
+    buttonLink: "/post-job",
+    gradient: "bg-gradient-to-br from-rose-900/80 via-rose-800/50 to-rose-900/30",
+    hoverGradient: "bg-rose-500/20",
+    buttonColor: "bg-rose-500 hover:bg-rose-600 text-white shadow-lg hover:shadow-rose-500/25"
   }
+];
 
-  useEffect(() => {
-    if (isLoaded) {
-      fnCompanies();
-    }
-  }, [isLoaded]);
-
-  if (!isLoaded || loadingCompanies) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <BarLoader color="#8B5CF6" />
-      </div>
-    );
-  }
-
-  if (user?.unsafeMetadata?.role !== "recruiter") {
-    router.push("/job-listing");
-  }
-
+export default function Home() {
   return (
-    <div className="min-h-screen relative py-10 px-4">
+    <main className="flex flex-col gap-10 sm:gap-20 py-10 sm:py-20 relative">
       {/* Animated background gradients */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div 
@@ -150,11 +67,12 @@ const PostJob = () => {
         />
       </div>
 
-      <motion.div
+      {/* Hero Section */}
+      <motion.section 
+        className="text-center relative"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8 }}
-        className="max-w-4xl mx-auto relative"
       >
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
@@ -165,222 +83,142 @@ const PostJob = () => {
           <Sparkles className="w-8 h-8 text-yellow-400" />
         </motion.div>
 
-        <h1 className="text-5xl sm:text-7xl font-extrabold text-center mb-12">
+        <h1 className="flex flex-col justify-center items-center text-4xl sm:text-6xl lg:text-8xl font-extrabold tracking-tighter">
           <span className="bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 text-transparent bg-clip-text">
-            Post a Job
+            Find Your Dream Job
           </span>
+          <motion.span 
+            className="flex items-center justify-center gap-2 sm:gap-6 mt-4"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.4 }}
+          >
+            and get{" "}
+            <span className={`${permanentMarker.className} text-5xl sm:text-7xl lg:text-9xl text-rose-500`}>
+              Hired
+            </span>
+          </motion.span>
         </h1>
-
-        <motion.form
+        <motion.p 
+          className="text-blue-200 mt-6 text-sm sm:text-xl max-w-2xl mx-auto"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
-          onSubmit={handleSubmit(onSubmit)}
-          className="space-y-8 backdrop-blur-sm bg-gray-800/30 p-8 rounded-2xl border border-gray-700/50"
+          transition={{ duration: 0.8, delay: 0.6 }}
         >
-          {/* Job Title */}
-          <motion.div
-            className="space-y-2"
-            whileHover={{ scale: 1.01 }}
-            transition={{ type: "spring", stiffness: 400, damping: 10 }}
+          Explore a wide range of job opportunities and find your perfect fit here.
+        </motion.p>
+      </motion.section>
+
+      {/* CTA Buttons */}
+      <motion.div 
+        className="flex justify-center gap-6"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, delay: 0.8 }}
+      >
+        <Link href="/job-listing">
+          <Button 
+            size="lg"
+            className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg hover:shadow-blue-500/25 transform hover:scale-105 transition-all duration-300"
           >
-            <label className="flex gap-2 text-gray-200 mb-2">
-              <FileText className="w-5 h-5" />
-              Job Title
-            </label>
-            <Input 
-              placeholder="Enter job title" 
-              {...register("title")} 
-              className="h-12 bg-gray-900/50 border-gray-700/50 focus:border-purple-500/50 rounded-xl text-gray-200 placeholder:text-gray-400"
-            />
-            {errors.title && (
-              <motion.p 
-                initial={{ opacity: 0 }} 
-                animate={{ opacity: 1 }} 
-                className="text-rose-500"
-              >
-                {errors.title.message}
-              </motion.p>
-            )}
-          </motion.div>
-
-          {/* Job Description */}
-          <motion.div
-            className="space-y-2"
-            whileHover={{ scale: 1.01 }}
-            transition={{ type: "spring", stiffness: 400, damping: 10 }}
+            Find Jobs
+            <ChevronRight className="ml-2 h-4 w-4" />
+          </Button>
+        </Link>
+        <Link href="/post-job">
+          <Button 
+            size="lg"
+            className="bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 text-white shadow-lg hover:shadow-rose-500/25 transform hover:scale-105 transition-all duration-300"
           >
-            <label className="flex gap-2 text-gray-200 mb-2">
-              <ClipboardList className="w-5 h-5" />
-              Job Description
-            </label>
-            <Textarea 
-              placeholder="Enter job description" 
-              {...register("description")} 
-              className="min-h-[120px] bg-gray-900/50 border-gray-700/50 focus:border-purple-500/50 rounded-xl text-gray-200 placeholder:text-gray-400"
-            />
-            {errors.description && (
-              <motion.p 
-                initial={{ opacity: 0 }} 
-                animate={{ opacity: 1 }} 
-                className="text-rose-500"
-              >
-                {errors.description.message}
-              </motion.p>
-            )}
-          </motion.div>
-
-          {/* Location and Company Selection */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Location */}
-            <motion.div
-              className="space-y-2"
-              whileHover={{ scale: 1.01 }}
-              transition={{ type: "spring", stiffness: 400, damping: 10 }}
-            >
-              <label className="flex gap-2 text-gray-200 mb-2">
-                <MapPin className="w-5 h-5" />
-                Location
-              </label>
-              <Controller
-                name="location"
-                control={control}
-                render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger className="h-12 bg-gray-900/50 border-gray-700/50 focus:border-purple-500/50 rounded-xl text-gray-200">
-                      <SelectValue placeholder="Select location" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-gray-800 border-gray-700">
-                      <SelectGroup>
-                        {State.getStatesOfCountry("IN").map(({ name }) => (
-                          <SelectItem key={name} value={name} className="text-gray-200 focus:bg-purple-500/20">
-                            {name}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-              {errors.location && (
-                <motion.p 
-                  initial={{ opacity: 0 }} 
-                  animate={{ opacity: 1 }} 
-                  className="text-rose-500"
-                >
-                  {errors.location.message}
-                </motion.p>
-              )}
-            </motion.div>
-
-            {/* Company */}
-            <motion.div
-              className="space-y-2"
-              whileHover={{ scale: 1.01 }}
-              transition={{ type: "spring", stiffness: 400, damping: 10 }}
-            >
-              <label className="flex gap-2 text-gray-200 mb-2">
-                <Building2 className="w-5 h-5" />
-                Company
-              </label>
-              <div className="flex gap-4">
-                <div className="flex-1">
-                  <Controller
-                    name="company_id"
-                    control={control}
-                    render={({ field }) => (
-                      <Select value={field.value} onValueChange={field.onChange}>
-                        <SelectTrigger className="h-12 bg-gray-900/50 border-gray-700/50 focus:border-purple-500/50 rounded-xl text-gray-200">
-                          <SelectValue placeholder="Select company" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-gray-800 border-gray-700">
-                          <SelectGroup>
-                            {companies?.map(({ name, id }) => (
-                              <SelectItem key={name} value={id} className="text-gray-200 focus:bg-purple-500/20">
-                                {name}
-                              </SelectItem>
-                            ))}
-                          </SelectGroup>
-                        </SelectContent>
-                      </Select>
-                    )}
-                  />
-                </div>
-                <AddCompanyDrawer fetchCompanies={fnCompanies} session={session} />
-              </div>
-              {errors.company_id && (
-                <motion.p 
-                  initial={{ opacity: 0 }} 
-                  animate={{ opacity: 1 }} 
-                  className="text-rose-500"
-                >
-                  {errors.company_id.message}
-                </motion.p>
-              )}
-            </motion.div>
-          </div>
-
-          {/* Requirements */}
-          <motion.div
-            className="space-y-2"
-            whileHover={{ scale: 1.01 }}
-            transition={{ type: "spring", stiffness: 400, damping: 10 }}
-          >
-            <label className="flex gap-2 text-gray-200 mb-2">
-              <ClipboardList className="w-5 h-5" />
-              Requirements
-            </label>
-            <Controller
-              name="requirements"
-              control={control}
-              render={({ field }) => (
-                <div className="rounded-xl overflow-hidden border border-gray-700/50">
-                  <MDEditor 
-                    value={field.value} 
-                    onChange={field.onChange}
-                    preview="edit"
-                    className="bg-gray-900/50"
-                  />
-                </div>
-              )}
-            />
-            {errors.requirements && (
-              <motion.p 
-                initial={{ opacity: 0 }} 
-                animate={{ opacity: 1 }} 
-                className="text-rose-500"
-              >
-                {errors.requirements.message}
-              </motion.p>
-            )}
-          </motion.div>
-
-          {loadingCreateJob && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="py-2"
-            >
-              <BarLoader width="100%" color="#8B5CF6" />
-            </motion.div>
-          )}
-
-          <motion.div
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            <Button 
-              type="submit"
-              className="w-full h-12 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-purple-500/25 transition-all duration-300"
-              disabled={loadingCreateJob}
-            >
-              Post Job
-            </Button>
-          </motion.div>
-        </motion.form>
+            Post a Job
+            <ChevronRight className="ml-2 h-4 w-4" />
+          </Button>
+        </Link>
       </motion.div>
-    </div>
-  );
-};
 
-export default PostJob;
+      {/* Companies Carousel */}
+      <motion.section
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    transition={{ duration: 0.8, delay: 1 }}
+    className="relative py-10"
+  >
+    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-purple-500/10 to-transparent" />
+    <Carousel
+      plugins={[Autoplay({ delay: 2000 })]}
+      className="w-full"
+    >
+      <CarouselContent className="flex gap-5 sm:gap-10">
+        {companies.map(({ name, id, path }) => (
+          <CarouselItem key={id} className="basis-1/3 lg:basis-1/6 flex items-center justify-center">
+            <motion.div 
+              className="h-20 w-full flex items-center justify-center p-4 bg-gray-800/50 rounded-xl border border-gray-700/50 hover:border-gray-600/50 transition-all"
+              whileHover={{ scale: 1.05 }}
+              transition={{ type: "spring", stiffness: 400, damping: 10 }}
+            >
+              {path ? (
+                <img 
+                  src={path} 
+                  alt={`${name} logo`} 
+                  className="h-8 w-auto object-contain filter brightness-100  hover:opacity-100 transition-opacity"
+                />
+              ) : (
+                <span className="text-lg font-semibold bg-gradient-to-r from-gray-200 to-gray-400 text-transparent bg-clip-text hover:from-white hover:to-gray-200 transition-all duration-300">
+                  {name}
+                </span>
+              )}
+            </motion.div>
+          </CarouselItem>
+        ))}
+      </CarouselContent>
+    </Carousel>
+  </motion.section>
+
+      {/* Feature Cards */}
+      <motion.section 
+      className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-7xl mx-auto px-4"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.8, delay: 1.2 }}
+    >
+      {features.map((feature, index) => (
+        <FeatureCard key={index} {...feature} />
+      ))}
+    </motion.section>
+
+      {/* FAQ Section */}
+      <motion.section
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    transition={{ duration: 0.8, delay: 1.4 }}
+    className="pb-10 max-w-3xl mx-auto w-full"
+  >
+    <h2 className="text-2xl font-bold mb-8 text-center bg-gradient-to-r from-purple-400 to-pink-400 text-transparent bg-clip-text">
+      Frequently Asked Questions
+    </h2>
+    <Accordion type="single" collapsible className="space-y-4">
+      {faqs.map((faq, index) => (
+        <motion.div
+          key={index}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 1.4 + index * 0.1 }}
+        >
+          <AccordionItem 
+            value={`item-${index}`}
+            className="bg-gradient-to-br from-gray-800/50 to-gray-700/30 backdrop-blur-sm border border-gray-700/50 rounded-xl overflow-hidden hover:border-gray-600/50 transition-all duration-300 shadow-lg"
+          >
+            <AccordionTrigger className="px-6 py-4 text-gray-200 hover:text-white hover:bg-gray-700/30 text-left">
+              <span className="text-lg font-medium">{faq.question}</span>
+            </AccordionTrigger>
+            <AccordionContent className="px-6 py-4 text-gray-300 bg-gray-800/30">
+              <p className="leading-relaxed">{faq.answer}</p>
+            </AccordionContent>
+          </AccordionItem>
+        </motion.div>
+      ))}
+    </Accordion>
+  </motion.section>
+    </main>
+  );
+}
